@@ -1,15 +1,7 @@
 import torch
-
 from torchfm.layer import FactorizationMachine, FeaturesEmbedding, FeaturesLinear
 
-
 class FactorizationMachineModel(torch.nn.Module):
-    """
-    A pytorch implementation of Factorization Machine.
-
-    Reference:
-        S Rendle, Factorization Machines, 2010.
-    """
 
     def __init__(self, field_dims, embed_dim):
         super().__init__()
