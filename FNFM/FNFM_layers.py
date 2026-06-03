@@ -15,9 +15,6 @@ class FieldAwareFactorizationMachine(torch.nn.Module):
             torch.nn.init.xavier_uniform_(embedding.weight.data)
 
     def forward(self, x):
-        """
-        :param x: Long tensor of size ``(batch_size, num_fields)``
-        """
         x = x + x.new_tensor(self.offsets).unsqueeze(0)
         xs = [self.embeddings[i](x) for i in range(self.num_fields)]
         ix = list()
@@ -43,9 +40,6 @@ class MultiLayerPerceptron(torch.nn.Module):
         self.mlp = torch.nn.Sequential(*layers)
 
     def forward(self, x):
-        """
-        :param x: Float tensor of size ``(batch_size, embed_dim)``
-        """
         return self.mlp(x)
 
 class FeaturesLinear(torch.nn.Module):
