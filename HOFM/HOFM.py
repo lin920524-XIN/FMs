@@ -1,15 +1,7 @@
 import torch
-
 from torchfm.layer import FeaturesLinear, FactorizationMachine, AnovaKernel, FeaturesEmbedding
 
-
 class HighOrderFactorizationMachineModel(torch.nn.Module):
-    """
-    A pytorch implementation of Higher-Order Factorization Machines.
-
-    Reference:
-        M Blondel, et al. Higher-Order Factorization Machines, 2016.
-    """
 
     def __init__(self, field_dims, order, embed_dim):
         super().__init__()
@@ -27,9 +19,6 @@ class HighOrderFactorizationMachineModel(torch.nn.Module):
             ])
 
     def forward(self, x):
-        """
-        :param x: Long tensor of size ``(batch_size, num_fields)``
-        """
         y = self.linear(x).squeeze(1)
         if self.order >= 2:
             x = self.embedding(x)
