@@ -11,9 +11,6 @@ class FeaturesEmbedding(torch.nn.Module):
         torch.nn.init.xavier_uniform_(self.embedding.weight.data)
 
     def forward(self, x):
-        """
-        :param x: Long tensor of size ``(batch_size, num_fields)``
-        """
         x = x + x.new_tensor(self.offsets).unsqueeze(0)
         return self.embedding(x)
 
@@ -26,9 +23,6 @@ class FeaturesLinear(torch.nn.Module):
         self.offsets = np.array((0, *np.cumsum(field_dims)[:-1]), dtype=np.long)
 
     def forward(self, x):
-        """
-        :param x: Long tensor of size ``(batch_size, num_fields)``
-        """
         x = x + x.new_tensor(self.offsets).unsqueeze(0)
         return torch.sum(self.fc(x), dim=1) + self.bias
 
@@ -42,9 +36,6 @@ class AttentionalFactorizationMachine(torch.nn.Module):
         self.dropouts = dropouts
 
     def forward(self, x):
-        """
-        :param x: Float tensor of size ``(batch_size, num_fields, embed_dim)``
-        """
         num_fields = x.shape[1]
         row, col = list(), list()
         for i in range(num_fields - 1):
