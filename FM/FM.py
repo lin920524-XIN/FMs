@@ -10,8 +10,5 @@ class FactorizationMachineModel(torch.nn.Module):
         self.fm = FactorizationMachine(reduce_sum=True)
 
     def forward(self, x):
-        """
-        :param x: Long tensor of size ``(batch_size, num_fields)``
-        """
         x = self.linear(x) + self.fm(self.embedding(x))
         return torch.sigmoid(x.squeeze(1))
