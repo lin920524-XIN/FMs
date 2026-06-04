@@ -70,11 +70,10 @@ def custom_bias_generator(var_num):
     return np.random.uniform(-1, 1, var_num)
 
 bqm = dimod.generators.gnm_random_bqm(
-          variables=VAR_NUM,
-          num_interactions=VAR_NUM*(VAR_NUM-1)/2,
-          vartype=dimod.BINARY,
-          bias_generator=custom_bias_generator
-      )
+  variables=VAR_NUM,
+  num_interactions=VAR_NUM*(VAR_NUM-1)/2,
+  vartype=dimod.BINARY,
+  bias_generator=custom_bias_generator)
 
 xs_train = np.random.randint(0, 2, (DATASET_SIZE, VAR_NUM), dtype=np.int8)
 ys_train = np.array([bqm.energy(x) for x in xs_train], dtype=np.float64)
@@ -83,7 +82,6 @@ ys_test = np.array([bqm.energy(x) for x in xs_test], dtype=np.float64)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
-
 model_py = FactorizationMachineModel(field_dims=FIELD_DIMS, embed_dim=K)
 model_py.to(device)
 
@@ -98,11 +96,11 @@ optimizer = torch.optim.Adam(model_py.parameters(), lr=LEARNING_RATE)
 model_py.train()
 for epoch in range(NUM_EPOCH):
     total_loss = 0
-
     for i, (inputs, labels) in enumerate(train_loader):
         inputs, labels = inputs.to(device), labels.to(device)
         outputs = model_py(inputs)
         loss = criterion(outputs.squeeze(), labels)
+
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -117,34 +115,31 @@ def fm_to_bqm(model, var_num, device='cpu'):
 
     def predict(x_np):
         x = torch.tensor(x_np, dtype=torch.long).unsqueeze(0).to(device)
-
         with torch.no_grad():
             return model(x).item()
 
     base = np.zeros(var_num, dtype=np.int64)
     b = predict(base)
-    f_ei = np.array([predict(base + np.eye(var_num, dtype=np.int64)[i]) for i in range(var_num)])
-    h = f_ei - b
+
+    weight = base + np.eye(var_num, dtype=np.int64)
+    h = np.array([predict(weight[i]) for i in range(var_num)]) - b
+
     Q = np.zeros((var_num, var_num))
-  
     for i in range(var_num):
-      
         for j in range(i + 1, var_num):
             x_ij = base.copy()
             x_ij[i] = 1
             x_ij[j] = 1
-            Q[i, j] = predict(x_ij) - f_ei[i] - f_ei[j] + b
+            Q[i, j] = predict(x_ij) - h[i] - h[j] - b
 
     h_dict = {i: float(h[i]) for i in range(var_num)}
     Q_dict = {(i, j): float(Q[i, j]) for i in range(var_num) for j in range(i+1, var_num)}
     bqm_pred = dimod.BinaryQuadraticModel(h_dict, Q_dict, float(b), dimod.BINARY)
-    Q += Q.T
     return bqm_pred, Q
 
 bqm_pytorch, Q_pytorch = fm_to_bqm(model_py, VAR_NUM)
-
 fig, ax = plt.subplots(figsize=(10, 8))
-im = ax.imshow(Q_pytorch, cmap='coolwarm', interpolation='nearest')
+im = ax.imshow(Q_pytorch + Q_pytorch.T, cmap='coolwarm', interpolation='nearest')
 cbar = fig.colorbar(im, ax=ax)
 cbar.set_label('Interaction Strength')
 ax.set_title("Mapped Symmetric Q Matrix (32 Variables) from torchfm")
@@ -158,7 +153,7 @@ ys_pred_pt_sorted = ys_pred_pytorch[sorted_indices]
 
 plt.figure(figsize=(12, 7))
 plt.plot(ys_sorted, color="blue", label="True Energy", linewidth=4, alpha=0.8)
-plt.plot(ys_pred_pt_sorted, color="red", label="Predicted Energy (PyTorch)", linestyle='-')
+plt.plot(ys_pred_pt_sorted, color="red", label="Predicted Energy (torchfm)", linestyle='-')
 plt.title("Comparison of True and PyTorch Predicted Energies", fontsize=16)
 plt.xlabel("Sorted Sample Index", fontsize=16)
 plt.ylabel("Energy", fontsize=16)
