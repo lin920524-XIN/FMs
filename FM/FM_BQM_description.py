@@ -158,7 +158,7 @@ def fm_to_bqm(model, var_num, device='cpu'):
     weight = base + np.eye(var_num, dtype=np.int64)
 
     # 每次都提取單一特徵所對應的列向量，並將其放入模型後，將結果扣掉全域偏置即可得到其特徵所對應的權重值
-    h = f_ei = np.array([predict(weight[i]) for i in range(var_num)]) - b
+    h = np.array([predict(weight[i]) for i in range(var_num)]) - b
 
     # 先建立一個空的矩陣來記錄二次項的參數
     Q = np.zeros((var_num, var_num))
